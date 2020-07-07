@@ -3,7 +3,7 @@ library(here)
 library(fs)
 library(digest)
 
-source(here("r-interface", "functions.R"))
+source(here("examples", "r-interface", "functions.R"))
 
 # Conda environment where Isofit is installed
 use_condaenv("new-isofit")
@@ -28,7 +28,7 @@ libradtran_template <- read_libradtran_template(template_file)
 # templates, but make sure to create new ones when the template changes.
 
 # Outputs stored in this directory.
-outdir <- dir_create(here("r-interface", "output"))
+outdir <- dir_create(here("examples", "r-interface", "output"))
 
 # Run a single reflectance spectrum
 r1 <- ht_workflow(
