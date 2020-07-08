@@ -41,7 +41,7 @@ write_libradtran_template <- function(template_list, con) {
 #' Hypertrace workflow for a single spectrum
 #'
 #' @param reflectance Known surface reflectance vector
-#' @param true_h20 Known atmospheric H2O
+#' @param true_h2o Known atmospheric H2O
 #' @param true_aot Known atospheric AOT
 #' @param wavelengths Vector of reflectance wavelengths (nm)
 #' @param libradtran_template Libradtran template list
@@ -60,7 +60,7 @@ write_libradtran_template <- function(template_list, con) {
 #' @return Forward uncertainty list
 #' @author Alexey Shiklomanov
 ht_workflow <- function(reflectance,
-                        true_h20,
+                        true_h2o,
                         true_aot,
                         wavelengths,
                         libradtran_template,
@@ -204,7 +204,7 @@ ht_workflow <- function(reflectance,
 
   geom <- isofit_geometry$Geometry()
 
-  radiance <- fm$calc_rdn(np_array(c(reflectance, true_aot, true_h20)), geom)
+  radiance <- fm$calc_rdn(np_array(c(reflectance, true_aot, true_h2o)), geom)
 
   inverse_config <- isofit_configs$Config(inversion_settings)
   iv <- isofit_inverse$Inversion(inverse_config, fm)
