@@ -86,9 +86,10 @@ ht_workflow <- function(reflectance,
   )
   if (mean(wavelengths) < 300) stop("Wavelengths should be in nm, not um")
 
+  dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
+  outdir <- normalizePath(outdir, mustWork = TRUE)
   lrt_digest <- digest::digest(libradtran_template)
-  lut_outdir <- normalizePath(file.path(outdir, "lut", lrt_digest),
-                              mustWork = TRUE)
+  lut_outdir <- file.path(outdir, "lut", lrt_digest)
   dir.create(lut_outdir, showWarnings = FALSE, recursive = TRUE)
   lrt_file <- file.path(lut_outdir, "00-libradtran-template.inp")
   write_libradtran_template(libradtran_template, lrt_file)
