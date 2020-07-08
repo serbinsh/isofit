@@ -98,7 +98,7 @@ ht_workflow <- function(reflectance,
   write_libradtran_template(libradtran_template, lrt_file)
 
   # Create wavelength file
-  wavelength_df <- data.frame(wl = wavelengths / 1000, fwhm = 0.01)
+  wavelength_df <- data.frame(wl = wavelengths, fwhm = 10)
   wavelength_file <- file.path(outdir, "wavelengths.txt")
   write.table(wavelength_df, wavelength_file,
               row.names = FALSE, col.names = FALSE)
@@ -147,6 +147,9 @@ ht_workflow <- function(reflectance,
   )
   h2o_state2 <- modifyList(h2o_state_default, h2o_state)
 
+  lrt_wavelengths_str <- libradtran_template[["wavelength"]]
+  lrt_wavelengths <- as.numeric(strsplit(lrt_wavelengths_str, " ")[[1]])
+
   rtm_settings <- dict(
     lut_grid = dict(AOT550 = aot_lut, H2OSTR = h2o_lut),
     radiative_transfer_engines = dict(
@@ -158,7 +161,7 @@ ht_workflow <- function(reflectance,
         lut_path = lut_outdir,
         statevector_names = state_names,
         template_file = lrt_file,
-        wavelength_range = range(wavelengths)
+        wavelength_range = lrt_wavelengths
       )
     ),
     statevector = dict(
@@ -201,7 +204,7 @@ ht_workflow <- function(reflectance,
 
   geom <- isofit_geometry$Geometry()
 
-  radiance <- fm$calc_rdn(np_array(c(reflectance, true_h20, true_aot)), geom)
+  radiance <- fm$calc_rdn(np_array(c(reflectance, true_aot, true_h20)), geom)
 
   inverse_config <- isofit_configs$Config(inversion_settings)
   iv <- isofit_inverse$Inversion(inverse_config, fm)
