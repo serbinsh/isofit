@@ -28,6 +28,9 @@ examples/*/remote/*prm20151026t173213_post*.txt
 examples/*/remote/*prm20151026t173213_rfl*.txt
 examples/*/remote/*.mat	examples/*/remote/*.mat
 examples/*/images/*.png	examples/*/images/*.png
+examples/**/*.png
+examples/**/*.mat
+examples/**/*.txt
 
 # Ignore test, build and distribution files
 build/
