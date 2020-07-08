@@ -27,14 +27,23 @@ libradtran_template <- read_libradtran_template(template_file)
 # a MD5 digest of this object. Therefore, we skip creating LUTs for identical
 # templates, but make sure to create new ones when the template changes.
 
+# This may be necessary for your configuration to work if you compiled
+# libradtran against libraries installed with conda. Modify as appropriate.
+libradtran_env <- sprintf("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:%s",
+                          dirname(py_config()$libpython))
+
 # Outputs stored in this directory.
 outdir <- dir_create(here("examples", "r-interface", "output"))
+
+# If you want to purge all existing outputs, run the following:
+# unlink(outdir, recursive = TRUE)
 
 # Run a single reflectance spectrum
 r1 <- ht_workflow(
   reflectance, 1.5, 0.2, wavelengths,
   libradtran_template,
   libradtran_basedir,
+  libradtran_environment = libradtran_env,
   outdir = outdir
 )
 plot(wavelengths, r1$reflectance, type = 'l',

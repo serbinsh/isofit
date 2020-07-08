@@ -38,7 +38,7 @@ write_libradtran_template <- function(template_list, con) {
   writeLines(trimws(lines), con)
 }
 
-#' .. title/description ..
+#' Hypertrace workflow for a single spectrum
 #'
 #' @param reflectance Known surface reflectance vector
 #' @param true_h20 Known atmospheric H2O
@@ -46,6 +46,8 @@ write_libradtran_template <- function(template_list, con) {
 #' @param wavelengths Vector of reflectance wavelengths (nm)
 #' @param libradtran_template Libradtran template list
 #' @param libradtran_basedir Source directory of LibRadTran
+#' @param libradtran_environment String of environment declarations. Should be
+#'   a single string, with multiple declarations separated by a newline (`\n`).
 #' @param instrument_configs Instrument configuration list (default = `list(SNR = 300)`)
 #' @param aot_state Modifications to AOT statevector
 #' @param h2o_state Modifications to H2O statevector
@@ -63,6 +65,7 @@ ht_workflow <- function(reflectance,
                         wavelengths,
                         libradtran_template,
                         libradtran_basedir,
+                        libradtran_environment = "",
                         instrument_configs = list(SNR = 300),
                         aot_state = list(),
                         h2o_state = list(),
@@ -150,6 +153,7 @@ ht_workflow <- function(reflectance,
       vswir = dict(
         engine_name = "libradtran",
         engine_base_dir = libradtran_basedir,
+        environment = libradtran_environment,
         lut_names = state_names,
         lut_path = lut_outdir,
         statevector_names = state_names,
