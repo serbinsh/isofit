@@ -98,7 +98,7 @@ ht_workflow <- function(reflectance,
   write_libradtran_template(libradtran_template, lrt_file)
 
   # Create wavelength file
-  wavelength_df <- data.frame(wl = wavelengths / 1000, fwhm = 0.01)
+  wavelength_df <- data.frame(wl = wavelengths, fwhm = 10)
   wavelength_file <- file.path(outdir, "wavelengths.txt")
   write.table(wavelength_df, wavelength_file,
               row.names = FALSE, col.names = FALSE)
