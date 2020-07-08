@@ -147,6 +147,9 @@ ht_workflow <- function(reflectance,
   )
   h2o_state2 <- modifyList(h2o_state_default, h2o_state)
 
+  lrt_wavelengths_str <- libradtran_template[["wavelength"]]
+  lrt_wavelengths <- as.numeric(strsplit(lrt_wavelengths_str, " ")[[1]])
+
   rtm_settings <- dict(
     lut_grid = dict(AOT550 = aot_lut, H2OSTR = h2o_lut),
     radiative_transfer_engines = dict(
@@ -158,7 +161,7 @@ ht_workflow <- function(reflectance,
         lut_path = lut_outdir,
         statevector_names = state_names,
         template_file = lrt_file,
-        wavelength_range = range(wavelengths)
+        wavelength_range = lrt_wavelengths
       )
     ),
     statevector = dict(
