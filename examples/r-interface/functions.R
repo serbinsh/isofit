@@ -204,7 +204,7 @@ ht_workflow <- function(reflectance,
 
   geom <- isofit_geometry$Geometry()
 
-  radiance <- fm$calc_rdn(np_array(c(reflectance, true_h20, true_aot)), geom)
+  radiance <- fm$calc_rdn(np_array(c(reflectance, true_aot, true_h20)), geom)
 
   inverse_config <- isofit_configs$Config(inversion_settings)
   iv <- isofit_inverse$Inversion(inverse_config, fm)
