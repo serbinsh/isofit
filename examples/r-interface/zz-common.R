@@ -3,12 +3,10 @@ library(here)
 library(fs)
 library(digest)
 
+source(here("examples", "r-interface", "config.R"))
 source(here("examples", "r-interface", "functions.R"))
 
-# Conda environment where Isofit is installed
-use_condaenv("new-isofit")
-# LibRadTran source code directory
-libradtran_basedir <- "~/projects/models/libradtran/libRadtran-2.0.3/"
+use_condaenv(CONDA_ENV)
 template_file <- here("examples", "r-interface", "lrt_template.inp")
 
 # Arguments
