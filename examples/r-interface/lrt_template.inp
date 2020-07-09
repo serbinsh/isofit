@@ -36,6 +36,10 @@ crs_model rayleigh bodhaine
 umu 1.0
 
 # Azimuth output angle (degrees)
+# Sensor in North (looking South) -- 0
+# Sensor in East (looking West) -- 90
+# Sensor in South (looking North) -- 180
+# Sensor in West (looking East) -- 270
 phi 0.0
 
 # Solar azimuth (degrees, 0-360)

@@ -49,6 +49,9 @@ write_libradtran_template <- function(template_list, con) {
 #' @param libradtran_environment String of environment declarations. Should be
 #'   a single string, with multiple declarations separated by a newline (`\n`).
 #' @param instrument_configs Instrument configuration list (default = `list(SNR = 300)`)
+#' @param geom Named list of geometry parameters. Names must be in:
+#'   `observer_azmiuth`, `observer_zenith`, `solar_azimuth`, `solar_zenith`. All
+#'   are in degrees.
 #' @param aot_state Modifications to AOT statevector
 #' @param h2o_state Modifications to H2O statevector
 #' @param aot_lut AOT look-up table grid (default = `c(0.001, 0.123, 0.6)`)
@@ -67,6 +70,7 @@ ht_workflow <- function(reflectance,
                         libradtran_basedir,
                         libradtran_environment = "",
                         instrument_configs = list(SNR = 300),
+                        geom = list(),
                         aot_state = list(),
                         h2o_state = list(),
                         aot_lut = c(0.001, 0.123, 0.6),
@@ -91,11 +95,6 @@ ht_workflow <- function(reflectance,
 
   dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
   outdir <- normalizePath(outdir, mustWork = TRUE)
-  lrt_digest <- digest::digest(libradtran_template)
-  lut_outdir <- file.path(outdir, "lut", lrt_digest)
-  dir.create(lut_outdir, showWarnings = FALSE, recursive = TRUE)
-  lrt_file <- file.path(lut_outdir, "00-libradtran-template.inp")
-  write_libradtran_template(libradtran_template, lrt_file)
 
   # Create wavelength file
   wavelength_df <- data.frame(wl = wavelengths, fwhm = 10)
@@ -150,6 +149,39 @@ ht_workflow <- function(reflectance,
   lrt_wavelengths_str <- libradtran_template[["wavelength"]]
   lrt_wavelengths <- as.numeric(strsplit(lrt_wavelengths_str, " ")[[1]])
 
+  # Geometry configuration
+  geom_default <- list(
+    path_length = -999, # not used
+    observer_azimuth = 0, # Degrees 0-360; 0 = Sensor in N, looking S; 90 = Sensor in W, looking E
+    observer_zenith = 0, # Degrees 0-90; 0 = directly overhead, 90 = horizon
+    solar_azimuth = 0, # Degrees 0-360; 0 = N, 90 = W, 180 = S, 270 = E
+    solar_zenith = 0   # not used (determined from time)
+  )
+  stopifnot(all(names(geom) %in% names(geom_default)))
+  if ("path_length" %in% names(geom)) {
+    warning("`path_length` geometry argument is not used.")
+  }
+  if ("solar_zenith" %in% names(geom)) {
+    warning("`solar_zenith` in geometry is not used. ",
+            "Set the `time` in the libradtran template instead.")
+  }
+  geom_list <- modifyList(geom_default, geom)
+  geomvec <- unname(unlist(geom_list))
+
+  # Modify libradtran template with geometry information
+  phi0 <- geom_list$solar_azimuth + 180
+  if (phi0 >= 360) phi0 <- phi0 - 360
+  lrt <- modifyList(libradtran_template, list(
+    umu = cos(geom_list$observer_zenith * pi / 180),
+    phi = geom_list$observer_azimuth,
+    phi0 = phi0
+  ))
+  lrt_digest <- digest::digest(lrt)
+  lut_outdir <- file.path(outdir, "lut", lrt_digest)
+  dir.create(lut_outdir, showWarnings = FALSE, recursive = TRUE)
+  lrt_file <- file.path(lut_outdir, "00-libradtran-template.inp")
+  write_libradtran_template(lrt, lrt_file)
+
   rtm_settings <- dict(
     lut_grid = dict(AOT550 = aot_lut, H2OSTR = h2o_lut),
     radiative_transfer_engines = dict(
@@ -202,18 +234,18 @@ ht_workflow <- function(reflectance,
   message("Building forward model...")
   fm <- isofit_forward$ForwardModel(fm_config)
 
-  geom <- isofit_geometry$Geometry()
+  igeom <- isofit_geometry$Geometry(obs = geomvec)
 
-  radiance <- fm$calc_rdn(np_array(c(reflectance, true_aot, true_h2o)), geom)
+  radiance <- fm$calc_rdn(np_array(c(reflectance, true_aot, true_h2o)), igeom)
 
   inverse_config <- isofit_configs$Config(inversion_settings)
   iv <- isofit_inverse$Inversion(inverse_config, fm)
   message("Performing inversion...")
-  state_trajectory <- iv$invert(radiance, geom)
+  state_trajectory <- iv$invert(radiance, igeom)
 
   message("Post-processing...")
   state_est <- np_array(drop(tail(state_trajectory, 1)))
-  unc <- iv$forward_uncertainty(state_est, radiance, geom)
+  unc <- iv$forward_uncertainty(state_est, radiance, igeom)
   names(unc) <- c("reflectance_full", "radiance", "path", "S_hat", "K", "G")
   unc$A <- unc$G %*% unc$K
   unc$trajectory <- state_trajectory
