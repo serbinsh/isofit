@@ -1,2 +1,5 @@
 # Example output
 /output/*
+
+# user-specific configuration
+config.R
