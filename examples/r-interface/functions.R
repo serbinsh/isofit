@@ -46,6 +46,7 @@ write_libradtran_template <- function(template_list, con) {
 #' @param wavelengths Vector of reflectance wavelengths (nm)
 #' @param libradtran_template Libradtran template list
 #' @param libradtran_basedir Source directory of LibRadTran
+#' @param outdir Output directory (default = "output")
 #' @param libradtran_environment String of environment declarations. Should be
 #'   a single string, with multiple declarations separated by a newline (`\n`).
 #' @param instrument_configs Instrument configuration list (default = `list(SNR = 300)`)
@@ -56,7 +57,6 @@ write_libradtran_template <- function(template_list, con) {
 #' @param h2o_state Modifications to H2O statevector
 #' @param aot_lut AOT look-up table grid (default = `c(0.001, 0.123, 0.6)`)
 #' @param h2o_lut H2O look-up table grid (default = `c(1.0, 2.5, 3.25)`)
-#' @param outdir Output directory (default = "output")
 #' @param inversion_windows List of inversion windows (start, end)
 #' @param prior_mean Prior mean (matrix, components x wavelengths)
 #' @param prior_cov Prior covariance matrix (array, components x wavelengths x wavelengths)
@@ -68,6 +68,7 @@ ht_workflow <- function(reflectance,
                         wavelengths,
                         libradtran_template,
                         libradtran_basedir,
+                        outdir,
                         libradtran_environment = "",
                         instrument_configs = list(SNR = 300),
                         geom = list(),
@@ -75,7 +76,6 @@ ht_workflow <- function(reflectance,
                         h2o_state = list(),
                         aot_lut = c(0.001, 0.123, 0.6),
                         h2o_lut = c(1.0, 2.5, 3.25),
-                        outdir = "output",
                         inversion_windows = list(
                           c(400, 1300),
                           c(1450, 1780),
