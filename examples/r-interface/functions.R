@@ -208,7 +208,7 @@ ht_workflow <- function(reflectance,
     wavelength_file = wavelength_file,
     surface_file = prior_file
   )
- 
+
   inversion_settings <- reticulate::dict(implementation = reticulate::dict(
     mode = "inversion",
     inversion = reticulate::dict(
