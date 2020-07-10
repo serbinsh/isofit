@@ -1,21 +1,16 @@
-library(reticulate)
 library(here)
 library(fs)
-library(digest)
 
 # Configuration file
 source(here("examples", "r-interface", "config.R"))
 source(here("examples", "r-interface", "functions.R"))
-
-# Conda environment where Isofit is installed
-use_condaenv(CONDA_ENV)
-template_file <- here("examples", "r-interface", "lrt_template.inp")
 
 # Arguments
 wavelengths <- seq(400, 2500, 5)
 true_refl <- drop(rrtm::pro4sail_4(1.4, 40, 0.01, 0.01, 3, 0.5)$bdr)
 reflectance <- approx(400:2500, true_refl, wavelengths,
                       yleft = 0, yright = 0)$y
+template_file <- here("examples", "r-interface", "lrt_template.inp")
 libradtran_template <- read_libradtran_template(template_file)
 # This object is a list that can be modified. For example:
 #     libradtran_template$source <- "solar /path/to/solar_flux..."
@@ -36,10 +31,7 @@ outdir <- dir_create(here("examples", "r-interface", "output"))
 # Run a single reflectance spectrum
 r1 <- ht_workflow(
   reflectance, 1.5, 0.2, wavelengths,
-  libradtran_template,
-  LIBRADTRAN_DIR,
-  libradtran_environment = LIBRADTRAN_ENV,
-  outdir = outdir
+  libradtran_template, outdir
 )
 plot(wavelengths, r1$reflectance, type = 'l',
      ylim = range(r1$reflectance, reflectance, na.rm = TRUE))

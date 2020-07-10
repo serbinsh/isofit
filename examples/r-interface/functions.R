@@ -45,10 +45,11 @@ write_libradtran_template <- function(template_list, con) {
 #' @param true_aot Known atospheric AOT
 #' @param wavelengths Vector of reflectance wavelengths (nm)
 #' @param libradtran_template Libradtran template list
-#' @param libradtran_basedir Source directory of LibRadTran
-#' @param outdir Output directory (default = "output")
-#' @param libradtran_environment String of environment declarations. Should be
-#'   a single string, with multiple declarations separated by a newline (`\n`).
+#' @param outdir Output directory
+#' @param libradtran_basedir Source directory of LibRadTran (default = `LIBRADTRAN_DIR`)
+#' @param libradtran_environment String of environment declarations. Should be a
+#'   single string, with multiple declarations separated by a newline (`\n`).
+#'   Default is value of `LIBRADTRAN_ENV`.
 #' @param instrument_configs Instrument configuration list (default = `list(SNR = 300)`)
 #' @param geom Named list of geometry parameters. Names must be in:
 #'   `observer_azmiuth`, `observer_zenith`, `solar_azimuth`, `solar_zenith`. All
@@ -67,9 +68,9 @@ ht_workflow <- function(reflectance,
                         true_aot,
                         wavelengths,
                         libradtran_template,
-                        libradtran_basedir,
                         outdir,
-                        libradtran_environment = "",
+                        libradtran_basedir = LIBRADTRAN_DIR,
+                        libradtran_environment = LIBRADTRAN_ENV,
                         instrument_configs = list(SNR = 300),
                         geom = list(),
                         aot_state = list(),

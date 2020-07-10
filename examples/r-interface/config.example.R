@@ -1,5 +1,6 @@
 # The conda environment where Isofit is installed
 CONDA_ENV <- "r-isofit"
+reticulate::use_condaenv(CONDA_ENV)
 
 # The root directory of the LibRadTran source code
 LIBRADTRAN_DIR <- "/path/to/libRadTran-2.0.3"
