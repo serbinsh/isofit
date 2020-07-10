@@ -88,7 +88,7 @@ ht_workflow <- function(reflectance,
                         )) {
 
   stopifnot(
-    length(reflectance) == length(wavelengths),
+    NROW(reflectance) == length(wavelengths),
     length(dim(prior_mean)) == 2
   )
   if (mean(wavelengths) < 300) stop("Wavelengths should be in nm, not um")
@@ -229,28 +229,50 @@ ht_workflow <- function(reflectance,
                          surface = surface_settings,
                          radiative_transfer = rtm_settings)
   ))
+  inverse_config <- isofit_configs$Config(inversion_settings)
 
   if (!ray$is_initialized()) ray_server <- ray$init()
   message("Building forward model...")
   fm <- isofit_forward$ForwardModel(fm_config)
+  iv <- isofit_inverse$Inversion(inverse_config, fm)
 
   igeom <- isofit_geometry$Geometry(obs = geomvec)
 
-  radiance <- fm$calc_rdn(reticulate::np_array(c(
-    reflectance, true_aot, true_h2o
-  )), igeom)
-
-  inverse_config <- isofit_configs$Config(inversion_settings)
-  iv <- isofit_inverse$Inversion(inverse_config, fm)
-  message("Performing inversion...")
-  state_trajectory <- iv$invert(radiance, igeom)
+  # Runs the meat of the workflow, in parallel!
+  message("Performing inversions...")
+  reticulate::py_run_string(paste(
+    "def htworkflow(refl, aot, h2o, fm, iv, igeom):",
+    "  import numpy as np",
+    "  statevec = np.concatenate((refl, aot, h2o), axis=None)",
+    "  radiance = fm.calc_rdn(statevec, igeom)",
+    "  state_trajectory = iv.invert(radiance, igeom)",
+    "  state_est = state_trajectory[-1]",
+    "  unc = iv.forward_uncertainty(state_est, radiance, igeom)",
+    "  return radiance, state_trajectory, unc",
+    "",
+    "htworkflow_r = r.ray.remote(htworkflow)",
+    paste0("result = r.ray.get([htworkflow_r.remote(",
+           "refl, r.true_aot, r.true_h2o, r.fm, r.iv, r.igeom",
+           ") for refl in r.reflectance.T])"),
+    sep = "\n"
+  ))
 
   message("Post-processing...")
-  state_est <- reticulate::np_array(drop(tail(state_trajectory, 1)))
-  unc <- iv$forward_uncertainty(state_est, radiance, igeom)
-  names(unc) <- c("reflectance_full", "radiance", "path", "S_hat", "K", "G")
-  unc$A <- unc$G %*% unc$K
-  unc$trajectory <- state_trajectory
+
+  # Matrix, n_wl x n_reflectance
+  radiance <- do.call(cbind, lapply(py$result, "[[", 1))
+
+  # Trajectory, list(n_reflectance)
+  state_trajectory <- lapply(py$result, "[[", 2)
+
+  # Forward uncertainty
+  unc <- lapply(py$result, "[[", 3)
+  unc <- lapply(
+    unc, setNames,
+    c("reflectance_full", "radiance", "path", "S_hat", "K", "G")
+  )
+
+  reflectance <- do.call(cbind, lapply(unc, "[[", "reflectance_full"))
 
   # Remove inversion windows
   iwindows_l <- lapply(
@@ -258,8 +280,12 @@ ht_workflow <- function(reflectance,
     function(x) wavelengths > x[1] & wavelengths < x[2]
   )
   iwindows <- Reduce(`|`, iwindows_l)
-  unc$reflectance <- unc$reflectance_full
-  unc$reflectance[!iwindows] <- NA
+  reflectance[!iwindows, ] <- NA
   message("Done!")
-  unc
+  list(
+    reflectance = reflectance,
+    radiance = radiance,
+    fw_uncertainty = unc,
+    state_trajectory = state_trajectory
+  )
 }
