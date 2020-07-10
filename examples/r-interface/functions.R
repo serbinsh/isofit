@@ -126,7 +126,7 @@ ht_workflow <- function(reflectance,
   instrument_configs2 <- modifyList(list(
     wavelength_file = wavelength_file
   ), instrument_configs)
-  instrument_settings <- do.call(dict, instrument_configs2)
+  instrument_settings <- do.call(reticulate::dict, instrument_configs2)
 
   state_names <- c("H2OSTR", "AOT550")
   aot_state_default <- list(
@@ -182,10 +182,10 @@ ht_workflow <- function(reflectance,
   lrt_file <- file.path(lut_outdir, "00-libradtran-template.inp")
   write_libradtran_template(lrt, lrt_file)
 
-  rtm_settings <- dict(
-    lut_grid = dict(AOT550 = aot_lut, H2OSTR = h2o_lut),
-    radiative_transfer_engines = dict(
-      vswir = dict(
+  rtm_settings <- reticulate::dict(
+    lut_grid = reticulate::dict(AOT550 = aot_lut, H2OSTR = h2o_lut),
+    radiative_transfer_engines = reticulate::dict(
+      vswir = reticulate::dict(
         engine_name = "libradtran",
         engine_base_dir = libradtran_basedir,
         environment = libradtran_environment,
@@ -196,36 +196,36 @@ ht_workflow <- function(reflectance,
         wavelength_range = lrt_wavelengths
       )
     ),
-    statevector = dict(
-      AOT550 = do.call(dict, aot_state2),
-      H2OSTR = do.call(dict, h2o_state2)
+    statevector = reticulate::dict(
+      AOT550 = do.call(reticulate::dict, aot_state2),
+      H2OSTR = do.call(reticulate::dict, h2o_state2)
     ),
-    unknowns = dict(H2O_ABSCO = 0.01)
+    unknowns = reticulate::dict(H2O_ABSCO = 0.01)
   )
 
-  surface_settings <- dict(
+  surface_settings <- reticulate::dict(
     surface_category = "multicomponent_surface",
     wavelength_file = wavelength_file,
     surface_file = prior_file
   )
  
-  inversion_settings <- dict(implementation = dict(
+  inversion_settings <- reticulate::dict(implementation = reticulate::dict(
     mode = "inversion",
-    inversion = dict(
+    inversion = reticulate::dict(
       windows = do.call(rbind, inversion_windows)
     )
   ))
 
   # Load Python modules
-  isofit <- import("isofit")
-  ray <- import("ray")
-  isofit_forward <- import("isofit.core.forward")
-  isofit_configs <- import("isofit.configs.configs")
-  isofit_inverse <- import("isofit.inversion.inverse")
-  isofit_geometry <- import("isofit.core.geometry")
+  isofit <- reticulate::import("isofit")
+  ray <- reticulate::import("ray")
+  isofit_forward <- reticulate::import("isofit.core.forward")
+  isofit_configs <- reticulate::import("isofit.configs.configs")
+  isofit_inverse <- reticulate::import("isofit.inversion.inverse")
+  isofit_geometry <- reticulate::import("isofit.core.geometry")
 
-  fm_config <- isofit_configs$Config(dict(
-    forward_model = dict(instrument = instrument_settings,
+  fm_config <- isofit_configs$Config(reticulate::dict(
+    forward_model = reticulate::dict(instrument = instrument_settings,
                          surface = surface_settings,
                          radiative_transfer = rtm_settings)
   ))
@@ -236,7 +236,9 @@ ht_workflow <- function(reflectance,
 
   igeom <- isofit_geometry$Geometry(obs = geomvec)
 
-  radiance <- fm$calc_rdn(np_array(c(reflectance, true_aot, true_h2o)), igeom)
+  radiance <- fm$calc_rdn(reticulate::np_array(c(
+    reflectance, true_aot, true_h2o
+  )), igeom)
 
   inverse_config <- isofit_configs$Config(inversion_settings)
   iv <- isofit_inverse$Inversion(inverse_config, fm)
@@ -244,7 +246,7 @@ ht_workflow <- function(reflectance,
   state_trajectory <- iv$invert(radiance, igeom)
 
   message("Post-processing...")
-  state_est <- np_array(drop(tail(state_trajectory, 1)))
+  state_est <- reticulate::np_array(drop(tail(state_trajectory, 1)))
   unc <- iv$forward_uncertainty(state_est, radiance, igeom)
   names(unc) <- c("reflectance_full", "radiance", "path", "S_hat", "K", "G")
   unc$A <- unc$G %*% unc$K
