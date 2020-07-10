@@ -1,5 +1,4 @@
 library(here)
-library(raster)
 source(here("examples", "r-interface", "config.R"))
 source(here("examples", "r-interface", "functions.R"))
 
