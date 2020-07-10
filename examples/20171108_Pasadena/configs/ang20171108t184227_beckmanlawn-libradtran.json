@@ -62,7 +62,6 @@
       "radiative_transfer_engines": {
         "vswir": {
           "engine_name": "libradtran",
-          "engine_base_dir": "/Users/sserbin/software/libRadtran-2.0.3/",
           "wavelength_range":[370,2505],
           "lut_path": "../lut/",
           "template_file": "ang20171108t184227_libradtran.inp",
