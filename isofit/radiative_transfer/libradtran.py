@@ -49,6 +49,7 @@ class LibRadTranRT(TabularRT):
         self.treat_as_emissive = False
         self.libradtran_dir = self.find_basedir(engine_config)
         self.libradtran_template_file = engine_config.template_file
+        self.libradtran_environment = engine_config.environment
 
         self.lut_quantities = ['rhoatm', 'transm', 'sphalb', 'transup']
 
@@ -167,6 +168,7 @@ class LibRadTranRT(TabularRT):
         with open(scriptfilepath, 'w') as f:
             f.write('#!/usr/bin/bash\n')
             f.write('export cwd=`pwd`\n')
+            f.write('%s\n' % self.libradtran_environment)
             f.write('cd %s/test\n' % self.libradtran_dir)
             f.write('../bin/uvspec < %s > %s\n' % (infilepath0, outfilepath0))
             f.write('../bin/uvspec < %s > %s\n' %

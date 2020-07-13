@@ -1,0 +1,9 @@
+# Example output
+/output/*
+
+# user-specific configuration
+config.R
+
+# Example results
+/examples/results.fst
+/figures

@@ -1,0 +1,57 @@
+name: R interface
+
+on: [push, pull_request]
+
+jobs:
+  r-interface:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install Isofit
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+
+    - name: Set up R
+      uses: r-lib/actions/setup-r@v1
+      with:
+        r-version: '3.6.3'
+
+    - name: Install R dependencies
+      run: |
+        Rscript -e "install.packages(c('reticulate', 'R.matlab', 'digest', 'fs', 'here', 'remotes'))"
+        Rscript -e "remotes::install_github('ashiklom/rrtm')"
+
+    - name: Install libradtran dependencies
+      run: |
+        # apt-get update && apt-get install -y sudo build-essential gfortran python2
+        sudo apt-get install -y libnetcdf-dev libnetcdff-dev libgsl-dev
+
+    - name: Download and install libradtran
+      run: |
+        wget -nv http://www.libradtran.org/download/libRadtran-2.0.3.tar.gz
+        tar -xf libRadtran-2.0.3.tar.gz
+        cd libRadtran-2.0.3
+        wget -nv http://www.meteo.physik.uni-muenchen.de/~libradtran/lib/exe/fetch.php?media=download:reptran_2017_all.tar.gz -O reptran-2017-all.tar.gz
+        tar -xf reptran-2017-all.tar.gz
+        PYTHON=$(which python2) ./configure --prefix=$(pwd)
+        # For some reason, uvspecfunction compilation fails...
+        make --ignore-errors
+
+    - name: Configure R interface
+      run: |
+        touch examples/r-interface/config.R
+        echo 'LIBRADTRAN_DIR <- "$GITHUB_WORKSPACE/libRadtran-2.0.3"' >> examples/r-interface/config.R
+        echo 'LIBRADTRAN_ENV <- ""' >> examples/r-interface/config.R
+
+    - name: Run basic hypertrace workflow
+      run: |
+        Rscript examples/r-interface/ht-workflow-fun.R

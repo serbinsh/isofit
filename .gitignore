@@ -8,6 +8,10 @@
 .buildinfo
 .nojekyll
 
+# Ignore silly R files
+.RData
+.Rhistory
+
 # Ignore folders and their contents with these names
 .vscode
 __pycache__
